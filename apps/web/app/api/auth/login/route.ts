@@ -85,11 +85,7 @@ export async function POST(req: NextRequest) {
           email,
           reason: "INVALID_PASSWORD",
         },
-<<<<<<< HEAD
         ipAddress: getRequestIp(req),
-=======
-        ipAddress: req.headers.get("x-forwarded-for") ?? "unknown",
->>>>>>> f423814a166f5c296216f6df7f594e2daac89868
         userAgent: req.headers.get("user-agent") ?? "",
       });
 
@@ -116,11 +112,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role,
       },
-<<<<<<< HEAD
       ipAddress: getRequestIp(req),
-=======
-      ipAddress: req.headers.get("x-forwarded-for") ?? "unknown",
->>>>>>> f423814a166f5c296216f6df7f594e2daac89868
       userAgent: req.headers.get("user-agent") ?? "",
     });
 
