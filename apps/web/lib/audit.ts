@@ -19,7 +19,6 @@ export async function createAuditLog(params: CreateAuditLogParams) {
       entityType: params.entityType,
       entityId: params.entityId ?? null,
 
-      // FIXED JSON TYPE FOR PRISMA
       metadata: params.metadata
         ? (params.metadata as Prisma.InputJsonValue)
         : Prisma.JsonNull,
