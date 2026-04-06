@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  TEAM_LEAD
+  MANAGER
+  HR
+  IT_SUPPORT
+  ADMIN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketCategory {
+  HARDWARE
+  SOFTWARE
+  NETWORK
+  VPN
+  EMAIL
+  ACCESS_REQUEST
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  PENDING
+  WAITING_FOR_EMPLOYEE
+  RESOLVED
+  CLOSED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model Department {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String?
+
+  users   User[]
+  tickets Ticket[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           String  @id @default(uuid())
+  keycloakId   String? @unique
+  employeeId   String? @unique
+  name         String
+  email        String  @unique
+  passwordHash String?
+  role         Role
+  avatarUrl    String?
+  isActive     Boolean @default(true)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  createdTickets        Ticket[]               @relation("TicketEmployee")
+  assignedTickets       Ticket[]               @relation("TicketAssignee")
+  ticketComments        TicketComment[]
+  ticketAttachments     TicketAttachment[]
+  documentRequests      DocumentRequest[]
+  employmentVerifications EmploymentVerification[]
+  backgroundVerifications BackgroundVerification[]
+  learningArticles      LearningArticle[]      @relation("LearningArticleAuthor")
+  auditLogs             AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ticket {
+  id          String         @id @default(uuid())
+  ticketNumber String        @unique
+  title       String
+  description String
+  category    TicketCategory
+  status      TicketStatus   @default(OPEN)
+  priority    Priority
+  contactEmail String
+
+  employeeId  String
+  employee    User           @relation("TicketEmployee", fields: [employeeId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id])
+
+  departmentId String?
+  department   Department?   @relation(fields: [departmentId], references: [id])
+
+  comments    TicketComment[]
+  attachments TicketAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([assignedToId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([priority])
+}
+
+model TicketComment {
+  id       String @id @default(uuid())
+  ticketId String
+  userId   String
+  message  String
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  attachments CommentAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ticketId])
+  @@index([userId])
+}
+
+model TicketAttachment {
+  id          String  @id @default(uuid())
+  ticketId     String
+  fileName     String
+  fileUrl      String
+  contentType  String?
+  uploadedById String?
+
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  uploadedBy User?  @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([uploadedById])
+}
+
+model CommentAttachment {
+  id          String  @id @default(uuid())
+  commentId   String
+  fileName    String
+  fileUrl     String
+  contentType String?
+
+  comment   TicketComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([commentId])
+}
+
+model DocumentRequest {
+  id           String        @id @default(uuid())
+  employeeId   String
+  documentType String
+  purpose      String
+  urgencyLevel UrgencyLevel
+  status       RequestStatus @default(PENDING)
+  hrNotes      String?
+  documentUrl  String?
+
+  employee User @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model EmploymentVerification {
+  id                  String             @id @default(uuid())
+  employeeId          String
+  employeeName        String
+  companyName         String
+  requestEmail        String
+  verificationPurpose String
+  status              VerificationStatus @default(PENDING)
+  hrNotes             String?
+
+  employee User @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model BackgroundVerification {
+  id                  String @id @default(uuid())
+  employeeId          String
+  verificationCompany String
+  verificationStatus  String
+  verificationNotes   String?
+  documentUrl         String?
+
+  employee User @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([verificationStatus])
+}
+
+model LearningArticle {
+  id        String  @id @default(uuid())
+  title     String
+  slug      String  @unique
+  excerpt   String?
+  content   String
+  published Boolean @default(false)
+
+  authorId String?
+  author   User?   @relation("LearningArticleAuthor", fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published])
+}
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+model TicketCounter {
+  id    String @id
+  value Int
+}

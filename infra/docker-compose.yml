@@ -1,0 +1,112 @@
+version: "3.9"
+
+services:
+  web:
+    container_name: dejoiy-web
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dejoiy_portal?schema=public
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+
+      JWT_SECRET: super-secret-jwt-key-change-me
+
+      MAIL_FROM: noreply@corp.dejoiy.com
+
+      # Resend
+      RESEND_API_KEY: ""
+
+      # SMTP fallback
+      SMTP_HOST: ""
+      SMTP_PORT: "587"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      SMTP_SECURE: "false"
+
+      # AWS S3
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      AWS_S3_BUCKET: ""
+
+      # Keycloak
+      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
+      NEXT_PUBLIC_KEYCLOAK_REALM: dejoiy
+      KEYCLOAK_CLIENT_ID: dejoiy-portal
+      KEYCLOAK_CLIENT_SECRET: ""
+
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    volumes:
+      - ../apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+    restart: unless-stopped
+
+  postgres:
+    container_name: dejoiy-postgres
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: dejoiy_portal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - dejoiy_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    container_name: dejoiy-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - dejoiy_redis_data:/data
+    restart: unless-stopped
+
+  rabbitmq:
+    container_name: dejoiy-rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - dejoiy_rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: dejoiy-pgadmin
+    image: dpage/pgadmin4:8
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@corp.dejoiy.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    depends_on:
+      - postgres
+    volumes:
+      - dejoiy_pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+
+volumes:
+  dejoiy_postgres_data:
+  dejoiy_redis_data:
+  dejoiy_rabbitmq_data:
+  dejoiy_pgadmin_data:
