@@ -1,30 +1,71 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Bell,
-  LogOut,
-  Menu,
-  Moon,
-  Search,
-  Sun,
-  UserCircle2,
-} from "lucide-react";
+import { Bell, LogOut, Menu, Search, UserCircle2 } from "lucide-react";
+
+type CurrentUser = {
+  id: string;
+  employeeId?: string | null;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl?: string | null;
+  department?: {
+    id: string;
+    name: string;
+    description?: string | null;
+  } | null;
+};
 
 export function Topbar() {
-  const [dark, setDark] = useState(false);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [search, setSearch] = useState("");
+
+  function handleSearch(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && search.trim() !== "") {
+      window.location.href = `/tickets?search=${search}`;
+    }
+  }
 
   useEffect(() => {
-    const root = document.documentElement;
-    setDark(root.classList.contains("dark"));
-  }, []);
+    let cancelled = false;
 
-  function toggleTheme() {
-    const root = document.documentElement;
-    root.classList.toggle("dark");
-    setDark(root.classList.contains("dark"));
-  }
+    async function loadCurrentUser() {
+      try {
+        setLoading(true);
+
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          if (!cancelled) setUser(null);
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!cancelled) {
+          setUser(data);
+        }
+      } catch (error) {
+        console.error("Failed to load current user:", error);
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadCurrentUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     try {
@@ -32,6 +73,7 @@ export function Topbar() {
 
       await fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "include",
       });
 
       window.location.href = "/login";
@@ -42,61 +84,74 @@ export function Topbar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-      <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 lg:hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="flex h-20 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 lg:hidden dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+          >
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:flex dark:border-slate-700 dark:bg-slate-800/70">
+          <div className="hidden items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 md:flex dark:border-slate-800 dark:bg-slate-900/80">
             <Search className="h-4 w-4 text-slate-400" />
+
             <input
               type="text"
-              placeholder="Search tickets, requests, employees..."
-              className="w-72 bg-transparent text-sm outline-none placeholder:text-slate-400 dark:text-slate-100"
+              placeholder="Search portal..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleSearch}
+              className="w-64 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400 dark:text-slate-100"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            aria-label="Toggle theme"
-          >
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-
-          <button
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            aria-label="Notifications"
+            type="button"
+            onClick={() => (window.location.href = "/notifications")}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
           >
             <Bell className="h-5 w-5" />
             <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500" />
           </button>
 
-          <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex dark:border-slate-700 dark:bg-slate-800">
-            <UserCircle2 className="h-9 w-9 text-slate-400" />
-            <div className="min-w-[140px]">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                Admin User
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-medium">
+                {loading ? "Loading..." : user?.name || "Unknown User"}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Enterprise Admin
+              <p className="text-xs text-slate-500">
+                {loading ? "Please wait" : user?.role || "No Role"}
               </p>
             </div>
 
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="h-10 w-10 rounded-xl object-cover"
+                />
+              ) : (
+                <UserCircle2 className="h-6 w-6" />
+              )}
+            </div>
+
             <button
+              type="button"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"
             >
-              <LogOut className="h-4 w-4" />
-              {loggingOut ? "Signing out..." : "Logout"}
+              <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
+
       </div>
     </header>
   );

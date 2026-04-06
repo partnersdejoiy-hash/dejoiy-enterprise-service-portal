@@ -30,7 +30,13 @@ export async function GET(req: NextRequest) {
     const canViewTeam = hasPermission(role, "tickets:view:team");
     const canViewOwn = hasPermission(role, "tickets:view:own");
 
-    const whereClause: Record<string, unknown> = {};
+    const whereClause: any = {};
+
+    /*
+    -------------------------------------
+    FILTERS
+    -------------------------------------
+    */
 
     if (status) whereClause.status = status;
     if (priority) whereClause.priority = priority;
@@ -38,8 +44,20 @@ export async function GET(req: NextRequest) {
     if (assignedToId) whereClause.assignedToId = assignedToId;
     if (departmentId) whereClause.departmentId = departmentId;
 
+    /*
+    -------------------------------------
+    SEARCH
+    -------------------------------------
+    */
+
     if (q) {
       whereClause.OR = [
+        {
+          ticketNumber: {
+            contains: q,
+            mode: "insensitive",
+          },
+        },
         {
           title: {
             contains: q,
@@ -53,21 +71,27 @@ export async function GET(req: NextRequest) {
           },
         },
         {
-          ticketNumber: {
-            contains: q,
-            mode: "insensitive",
+          employee: {
+            name: {
+              contains: q,
+              mode: "insensitive",
+            },
           },
         },
       ];
     }
+
+    /*
+    -------------------------------------
+    ROLE BASED ACCESS CONTROL
+    -------------------------------------
+    */
 
     if (canViewAll) {
       if (employeeId) {
         whereClause.employeeId = employeeId;
       }
     } else if (canViewTeam) {
-      // Baseline team visibility by department.
-      // In a more advanced system, this should use actual org hierarchy / reporting map.
       whereClause.departmentId = session.departmentId ?? undefined;
 
       if (employeeId) {
@@ -79,9 +103,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    /*
+    -------------------------------------
+    FETCH TICKETS
+    -------------------------------------
+    */
+
     const [tickets, total] = await Promise.all([
       prisma.ticket.findMany({
         where: whereClause,
+
         include: {
           employee: {
             select: {
@@ -91,6 +122,7 @@ export async function GET(req: NextRequest) {
               employeeId: true,
             },
           },
+
           assignedTo: {
             select: {
               id: true,
@@ -99,12 +131,14 @@ export async function GET(req: NextRequest) {
               employeeId: true,
             },
           },
+
           department: {
             select: {
               id: true,
               name: true,
             },
           },
+
           _count: {
             select: {
               comments: true,
@@ -112,19 +146,29 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+
         orderBy: {
           createdAt: "desc",
         },
+
         skip,
         take: pageSize,
       }),
+
       prisma.ticket.count({
         where: whereClause,
       }),
     ]);
 
+    /*
+    -------------------------------------
+    RESPONSE
+    -------------------------------------
+    */
+
     return NextResponse.json({
       data: tickets,
+
       pagination: {
         page,
         pageSize,
@@ -134,6 +178,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Get tickets error:", error);
+
     return NextResponse.json(
       { error: "Failed to fetch tickets" },
       { status: 500 }

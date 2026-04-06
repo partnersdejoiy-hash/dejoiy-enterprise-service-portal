@@ -55,24 +55,8 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          error: "Invalid input",
-          details: parsed.error.flatten(),
-        },
+        { error: "Invalid input", details: parsed.error.flatten() },
         { status: 400 }
-      );
-    }
-
-    const isOwnTicket = parsed.data.employeeId === session.id;
-    const canCreateForOthers =
-      role === AppRole.TEAM_LEAD ||
-      role === AppRole.MANAGER ||
-      role === AppRole.ADMIN;
-
-    if (!isOwnTicket && !canCreateForOthers) {
-      return NextResponse.json(
-        { error: "You can only create tickets for yourself" },
-        { status: 403 }
       );
     }
 
@@ -90,7 +74,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
 
+    const departmentId =
+      parsed.data.departmentId ?? employee.departmentId ?? null;
+
     const ticketNumber = await generateTicketNumber();
+
+    /*
+    ---------------------------------------
+    AUTO ROUTING LOGIC
+    ---------------------------------------
+    */
+
+    let assignedStaff = null;
+
+    if (departmentId) {
+      const staffList = await prisma.user.findMany({
+        where: {
+          departmentId: departmentId,
+          role: {
+            in: ["IT_SUPPORT", "TEAM_LEAD", "MANAGER"],
+          },
+          isActive: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          employeeId: true,
+        },
+      });
+
+      if (staffList.length > 0) {
+        assignedStaff =
+          staffList[Math.floor(Math.random() * staffList.length)];
+      }
+    }
 
     const ticket = await prisma.ticket.create({
       data: {
@@ -99,9 +117,10 @@ export async function POST(req: NextRequest) {
         category: parsed.data.category,
         priority: parsed.data.priority,
         description: parsed.data.description,
-        status: "OPEN",
+        status: assignedStaff ? "ASSIGNED" : "OPEN",
         employeeId: parsed.data.employeeId,
-        departmentId: parsed.data.departmentId ?? employee.departmentId ?? null,
+        departmentId,
+        assignedToId: assignedStaff?.id ?? null,
         contactEmail: parsed.data.contactEmail,
         attachments: parsed.data.attachments?.length
           ? {
@@ -116,17 +135,10 @@ export async function POST(req: NextRequest) {
       },
       include: {
         employee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+          select: { id: true, name: true, email: true },
         },
         department: {
-          select: {
-            id: true,
-            name: true,
-          },
+          select: { id: true, name: true },
         },
         attachments: true,
       },
@@ -142,7 +154,7 @@ export async function POST(req: NextRequest) {
         employeeId: ticket.employeeId,
         category: ticket.category,
         priority: ticket.priority,
-        attachmentCount: ticket.attachments.length,
+        autoAssignedTo: assignedStaff?.employeeId ?? null,
       },
       ipAddress: req.ip ?? "",
       userAgent: req.headers.get("user-agent") ?? "",
@@ -159,13 +171,10 @@ export async function POST(req: NextRequest) {
 
     const recipients = new Set<string>();
 
-    if (ticket.employee.email) {
-      recipients.add(ticket.employee.email);
-    }
+    if (ticket.employee.email) recipients.add(ticket.employee.email);
+    if (parsed.data.contactEmail) recipients.add(parsed.data.contactEmail);
 
-    if (parsed.data.contactEmail) {
-      recipients.add(parsed.data.contactEmail);
-    }
+    if (assignedStaff?.email) recipients.add(assignedStaff.email);
 
     await sendTicketCreatedEmail({
       to: Array.from(recipients),
@@ -174,7 +183,7 @@ export async function POST(req: NextRequest) {
       status: ticket.status,
       priority: ticket.priority,
       employeeName: ticket.employee.name,
-      assignedTo: null,
+      assignedTo: assignedStaff?.name ?? null,
       ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL}/tickets/${ticket.id}`,
     });
 

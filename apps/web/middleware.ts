@@ -3,14 +3,12 @@ import jwt from "jsonwebtoken";
 
 const AUTH_COOKIE = "dejoiy_token";
 
-const publicRoutes = [
-  "/",
-  "/login",
-];
+const publicRoutes = ["/login"];
 
 const publicApiRoutes = [
   "/api/auth/login",
   "/api/auth/logout",
+  "/api/auth/callback",
 ];
 
 function isPublicRoute(pathname: string) {
@@ -24,8 +22,11 @@ function isPublicApiRoute(pathname: string) {
 function verifyToken(token?: string) {
   if (!token) return null;
 
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+
   try {
-    return jwt.verify(token, process.env.JWT_SECRET!);
+    return jwt.verify(token, secret);
   } catch {
     return null;
   }
@@ -34,7 +35,6 @@ function verifyToken(token?: string) {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Ignore Next internals and static assets
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
@@ -43,25 +43,24 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public API routes
   if (isPublicApiRoute(pathname)) {
     return NextResponse.next();
   }
 
   const token = req.cookies.get(AUTH_COOKIE)?.value;
-  const session = verifyToken(token);
 
-  // Prevent logged-in users from going back to login
+// In middleware just check token existence
+// Full verification happens in API / server routes
+const session = token ? true : null;
+
   if (pathname === "/login" && session) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  // Allow public pages
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
   }
 
-  // Protect everything else
   if (!session) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", pathname);

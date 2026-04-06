@@ -10,6 +10,15 @@ const loginSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+function getRequestIp(req: NextRequest) {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  }
+
+  return "unknown";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -25,7 +34,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password } = parsed.data;
+    const email = parsed.data.email.toLowerCase().trim();
+    const { password } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -75,7 +85,7 @@ export async function POST(req: NextRequest) {
           email,
           reason: "INVALID_PASSWORD",
         },
-        ipAddress: req.ip ?? "",
+        ipAddress: getRequestIp(req),
         userAgent: req.headers.get("user-agent") ?? "",
       });
 
@@ -102,22 +112,30 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role,
       },
-      ipAddress: req.ip ?? "",
+      ipAddress: getRequestIp(req),
       userAgent: req.headers.get("user-agent") ?? "",
     });
 
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        employeeId: user.employeeId,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatarUrl: user.avatarUrl,
-        department: user.department,
+    const response = NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: user.id,
+          employeeId: user.employeeId,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
+          department: user.department,
+        },
       },
-    });
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
 
     response.cookies.set("dejoiy_token", token, {
       httpOnly: true,
@@ -130,6 +148,7 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("Login error:", error);
+
     return NextResponse.json(
       { error: "Failed to login" },
       { status: 500 }
