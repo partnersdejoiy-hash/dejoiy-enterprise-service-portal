@@ -17,6 +17,17 @@ pnpm-debug.log*
 # env files
 .env
 .env.local
+DATABASE_URL="postgresql://postgres:password@localhost:5432/dejoiy"
+
+REDIS_URL="redis://localhost:6379"
+
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your_email"
+SMTP_PASS="your_password"
+
+NEXTAUTH_SECRET="supersecretkey"
+NEXTAUTH_URL="http://localhost:3000"
 .env.development.local
 .env.test.local
 .env.production.local
