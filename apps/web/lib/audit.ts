@@ -17,9 +17,9 @@ export async function createAuditLog(params: CreateAuditLogParams) {
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,
-      metadata: params.metadata ?? undefined,
+      metadata: params.metadata ?? null,
       ipAddress: params.ipAddress ?? null,
       userAgent: params.userAgent ?? null,
     },
   });
-}
+}x
