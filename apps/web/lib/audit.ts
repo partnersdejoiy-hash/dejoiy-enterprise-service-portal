@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 type CreateAuditLogParams = {
@@ -17,9 +18,14 @@ export async function createAuditLog(params: CreateAuditLogParams) {
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,
-      metadata: params.metadata ?? null,
+
+      // FIXED JSON TYPE FOR PRISMA
+      metadata: params.metadata
+        ? (params.metadata as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
+
       ipAddress: params.ipAddress ?? null,
       userAgent: params.userAgent ?? null,
     },
   });
-}x
+}
