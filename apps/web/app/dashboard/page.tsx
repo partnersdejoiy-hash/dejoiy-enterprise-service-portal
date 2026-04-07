@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { getSessionUser } from "@/lib/server/auth";
 import { AppShell } from "@/components/app-shell";
+import { getSessionUser } from "@/lib/server/auth";
 import {
   ArrowRight,
   FileText,
@@ -62,6 +63,7 @@ function QuickActionCard({
 }
 
 export default function DashboardPage() {
+  const user = getSessionUser();
   const recentTickets = [
     {
       ticketNumber: "DEJ-IT-0003",
@@ -94,7 +96,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <AppShell>
+  <AppShell user={user}>
       <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-cyan-900 p-8 text-white shadow-xl">
         <div className="relative">
           <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/30 blur-3xl" />

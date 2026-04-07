@@ -23,9 +23,7 @@ function getJwtSecret() {
 }
 
 export function signAppToken(user: SessionUser) {
-  return jwt.sign(user, getJwtSecret(), {
-    expiresIn: "8h",
-  });
+  return jwt.sign(user, getJwtSecret(), { expiresIn: "8h" });
 }
 
 export function verifyAppToken(token: string): SessionUser | null {
@@ -50,17 +48,10 @@ export function getSessionUser(): SessionUser | null {
       token = authHeader.replace("Bearer ", "").trim();
     }
 
-    if (!token) {
-      return null;
-    }
+    if (!token) return null;
 
     return verifyAppToken(token);
-  } catch (error) {
-    console.error("Failed to read session user:", error);
+  } catch {
     return null;
   }
-}
-
-export function getAuthCookieName() {
-  return COOKIE_NAME;
 }
