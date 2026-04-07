@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 import Link from "next/link";
-import { AppShell } from "@/const user = await getSessionuser()/app-shell";
+import { AppShell } from "@/components/app-shell";
 import {
   ArrowRight,
   FileText,
