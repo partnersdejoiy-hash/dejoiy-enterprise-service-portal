@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { signAppToken } from "@/lib/auth";
+import { signAppToken } from "@/lib/server/auth";
 import { createAuditLog } from "@/lib/audit";
 
 const loginSchema = z.object({

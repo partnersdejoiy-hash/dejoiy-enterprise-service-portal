@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { signAppToken } from "@/lib/auth";
+import { signAppToken } from "@/lib/server/auth";
 import { createAuditLog } from "@/lib/audit";
 import { AppRole } from "@/lib/rbac";
 

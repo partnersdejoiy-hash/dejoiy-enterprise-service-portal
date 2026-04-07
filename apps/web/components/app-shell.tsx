@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser } from "@/lib/server/auth";
 
 type AppShellProps = {
   children: ReactNode;

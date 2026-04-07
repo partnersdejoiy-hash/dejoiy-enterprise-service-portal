@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser } from "@/lib/server/auth";
 import { createAuditLog } from "@/lib/audit";
 import { getUploadUrl } from "@/lib/s3";
 

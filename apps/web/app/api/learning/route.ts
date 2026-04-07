@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser } from "@/lib/server/auth";
 import { hasPermission, AppRole } from "@/lib/rbac";
 import { createAuditLog } from "@/lib/audit";
 
