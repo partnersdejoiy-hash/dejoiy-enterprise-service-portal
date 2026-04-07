@@ -1,4 +1,3 @@
-import { getSessionUser } from "@/lib/auth";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import {
@@ -106,7 +105,7 @@ export default function DashboardPage() {
               DEJOIY Enterprise Service Portal
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-bold leading-tight">
-              Welcome back, {user?.name || user?.email}
+              Welcome back to the Dejoiy Portal
             </h1>
             <p className="mt-4 max-w-3xl text-slate-200">
               Centralize IT support, HR document workflows, employment verification,
