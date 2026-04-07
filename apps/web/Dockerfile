@@ -1,41 +1,61 @@
-# -------- Base stage --------
-FROM node:20-alpine AS base
+import "server-only";
+import jwt from "jsonwebtoken";
+import { cookies, headers } from "next/headers";
 
-WORKDIR /app
+export type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: "EMPLOYEE" | "TEAM_LEAD" | "MANAGER" | "HR" | "IT_SUPPORT" | "ADMIN";
+  departmentId?: string | null;
+};
 
-# Install required system packages
-RUN apk add --no-cache libc6-compat openssl
+const COOKIE_NAME = "dejoiy_token";
 
-# -------- Dependencies stage --------
-FROM base AS deps
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
 
-COPY package.json package-lock.json* ./
-RUN npm install
+  if (!secret) {
+    throw new Error("JWT_SECRET is not configured");
+  }
 
-# -------- Builder stage --------
-FROM base AS builder
+  return secret;
+}
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+export function signAppToken(user: SessionUser) {
+  return jwt.sign(user, getJwtSecret(), { expiresIn: "8h" });
+}
 
-RUN npx prisma generate
-RUN npm run build
+export function verifyAppToken(token: string): SessionUser | null {
+  try {
+    return jwt.verify(token, getJwtSecret()) as SessionUser;
+  } catch {
+    return null;
+  }
+}
 
-# -------- Production runner stage --------
-FROM base AS runner
+export function getSessionUser(): SessionUser | null {
+  try {
+    const cookieStore = cookies();
+    const headerStore = headers();
 
-ENV NODE_ENV=production
-ENV PORT=3000
+    const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+    const authHeader = headerStore.get("authorization");
 
-WORKDIR /app
+    let token: string | undefined = cookieToken;
 
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/next.config.js ./next.config.js
+    if (!token && authHeader?.startsWith("Bearer ")) {
+      token = authHeader.replace("Bearer ", "").trim();
+    }
 
-EXPOSE 3000
+    if (!token) return null;
 
-CMD ["npm", "run", "start"]
+    return verifyAppToken(token);
+  } catch {
+    return null;
+  }
+}
+
+export function getAuthCookieName() {
+  return COOKIE_NAME;
+}
