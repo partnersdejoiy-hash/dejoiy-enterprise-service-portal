@@ -36,10 +36,10 @@ export function verifyAppToken(token: string): SessionUser | null {
   }
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+export function getSessionUser(): SessionUser | null {
   try {
-    const cookieStore = await cookies();
-    const headerStore = await headers();
+    const cookieStore = cookies();
+    const headerStore = headers();
 
     const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
     const authHeader = headerStore.get("authorization");
