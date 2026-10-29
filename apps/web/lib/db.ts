@@ -10,7 +10,8 @@ export const prisma =
   new PrismaClient({
     // SUPABASE_DATABASE_URL (serveme_app role, schema serveme in the DEJOIY BPO database) wins;
     // without it the portal keeps its old DATABASE_URL, so switching back is one env var.
-    datasourceUrl: process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL,
+    datasourceUrl: (process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL || "")
+      .trim().replace(/^[A-Z_]+=/, "").replace(/^["'`]+|["'`]+$/g, "").trim(),
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "info", "warn", "error"]
