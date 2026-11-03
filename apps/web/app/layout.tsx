@@ -5,6 +5,10 @@ export const metadata: Metadata = {
   title: "DEJOIY Enterprise Service Portal",
   description:
     "Enterprise portal for IT support, HR workflows, employment verification, background checks, learning center, and administration.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

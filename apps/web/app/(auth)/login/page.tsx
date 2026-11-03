@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Building2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -82,8 +82,7 @@ window.location.href = redirect;
       <div className="relative hidden lg:flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-cyan-900 p-10 text-white">
         <div className="relative z-10 max-w-xl">
           <div className="mb-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur">
-            <Building2 className="h-8 w-8" />
-            <span className="text-lg font-semibold">DEJOIY Enterprise</span>
+            <img src="/brand/dejoiy-desk-on-dark.svg" alt=":Dejoiy Desk" className="h-8 w-auto" />
           </div>
 
           <h1 className="text-5xl font-bold leading-tight">
@@ -102,9 +101,7 @@ window.location.href = redirect;
         <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
 
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
-              <Building2 className="h-8 w-8" />
-            </div>
+            <img src="/brand/icon-desk.svg" alt=":D Desk" className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-lg" />
 
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
               Welcome to DEJOIY Enterprise Service Portal

@@ -12,7 +12,6 @@ import {
   GraduationCap,
   Settings,
   Users,
-  Building2,
   Menu,
   X,
 } from "lucide-react";
@@ -53,8 +52,9 @@ export function Sidebar({ user }: SidebarProps) {
           <Menu className="h-6 w-6 text-slate-700 dark:text-white" />
         </button>
 
-        <span className="font-semibold text-slate-900 dark:text-white">
-          Dejoiy Portal
+        <span>
+          <img src="/brand/d-desk.svg" alt=":D Desk" className="h-6 w-auto dark:hidden" />
+          <img src="/brand/d-desk-on-dark.svg" alt=":D Desk" className="hidden h-6 w-auto dark:block" />
         </span>
       </div>
 
@@ -75,13 +75,10 @@ export function Sidebar({ user }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-6 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
-              <Building2 className="h-6 w-6" />
-            </div>
-
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">
-                DEJOIY Portal
+              <h1>
+                <img src="/brand/d-desk.svg" alt=":D Desk" className="h-8 w-auto dark:hidden" />
+                <img src="/brand/d-desk-on-dark.svg" alt=":D Desk" className="hidden h-8 w-auto dark:block" />
               </h1>
 
               <p className="text-xs text-slate-500 dark:text-slate-400">
